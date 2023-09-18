@@ -1,73 +1,139 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#include <sys/socket.h>
-#include <pthread.h>
-
-#define PORT 8080
-#define BUFFER_SIZE 1024
-
-int server_socket, new_socket;
-struct sockaddr_in server_addr, new_addr;
-socklen_t addr_size;
-char buffer[BUFFER_SIZE];
-
-void *sendMessage(void *arg) {
-    while (1) {
-        memset(buffer, 0, sizeof(buffer));
-        printf("Servidor: ");
-        fgets(buffer, sizeof(buffer), stdin); // Lee la entrada del servidor desde la consola
-        send(new_socket, buffer, strlen(buffer), 0);
+/*
+    C socket server example, handles multiple clients using threads
+    Compile
+    gcc server.c -lpthread -o server
+*/
+ 
+#include<stdio.h>
+#include<string.h>    //strlen
+#include<stdlib.h>    //strlen
+#include<sys/socket.h>
+#include<arpa/inet.h> //inet_addr
+#include<unistd.h>    //write
+#include<pthread.h> //for threading , link with lpthread
+ 
+//the thread function
+void *connection_handler(void *);
+ 
+int main(int argc , char *argv[])
+{
+    int socket_desc , client_sock , c;
+    struct sockaddr_in server , client;
+     
+    //Create socket
+    socket_desc = socket(AF_INET , SOCK_STREAM , 0);
+    if (socket_desc == -1)
+    {
+        printf("Could not create socket");
     }
-    return NULL;
-}
-
-int main() {
-    // Crear el socket del servidor
-    server_socket = socket(AF_INET, SOCK_STREAM, 0);
-    if (server_socket < 0) {
-        perror("Error al crear el socket del servidor");
-        exit(1);
+    puts("Socket created");
+     
+    //Prepare the sockaddr_in structure
+    server.sin_family = AF_INET;
+    server.sin_addr.s_addr = INADDR_ANY;
+    server.sin_port = htons( 8080 );
+     
+    //Bind
+    if( bind(socket_desc,(struct sockaddr *)&server , sizeof(server)) < 0)
+    {
+        //print the error message
+        perror("bind failed. Error");
+        return 1;
     }
+    puts("bind done");
+     
+    //Listen
+    listen(socket_desc , 3);
+     
+    //Accept and incoming connection
+    puts("Waiting for incoming connections...");
+    c = sizeof(struct sockaddr_in);
+     
+     
+    //Accept and incoming connection
+    puts("Waiting for incoming connections...");
+    c = sizeof(struct sockaddr_in);
+	pthread_t thread_id;
+	
+    while( (client_sock = accept(socket_desc, (struct sockaddr *)&client, (socklen_t*)&c)) )
+    {
+        puts("Connection accepted");
+         
+        if( pthread_create( &thread_id , NULL ,  connection_handler , (void*) &client_sock) < 0)
+        {
+            perror("could not create thread");
+            return 1;
+        }
+         
+        //Now join the thread , so that we dont terminate before the thread
+        //pthread_join( thread_id , NULL);
+        puts("Handler assigned");
 
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_port = PORT;
-    server_addr.sin_addr.s_addr = INADDR_ANY;
+        
 
-    // Vincular el socket a la dirección y el puerto
-    if (bind(server_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
-        perror("Error en la vinculación");
-        exit(1);
+        
     }
-
-    // Escuchar conexiones entrantes
-    if (listen(server_socket, 10) == 0) {
-        printf("Escuchando... \n");
-    } else {
-        perror("Error en la escucha");
-        exit(1);
+     
+    if (client_sock < 0)
+    {
+        perror("accept failed");
+        return 1;
     }
-
-    addr_size = sizeof(new_addr);
-    new_socket = accept(server_socket, (struct sockaddr*)&new_addr, &addr_size); // Aceptar la conexión entrante
-
-    pthread_t send_thread;
-    pthread_create(&send_thread, NULL, sendMessage, NULL);
-
-    // Inicio del juego de Pong
-    while (1) {
-        memset(buffer, 0, sizeof(buffer));
-        recv(new_socket, buffer, BUFFER_SIZE, 0); // Recibir mensaje del cliente
-        printf("Cliente: %s", buffer);
-    }
-
-    close(new_socket);
-    close(server_socket);
-
-    pthread_join(send_thread, NULL);
-
+     
     return 0;
 }
+ 
+/*
+ * This will handle connection for each client
+ * */
+void *connection_handler(void *socket_desc)
+{
+    //Get the socket descriptor
+    int sock = *(int*)socket_desc;
+    int read_size;
+    char *message , client_message[2000];
+    
+    //Send some messages to the client
+    message = "Greetings! I am your connection handler\n";
+    write(sock , message , strlen(message));
+     
+    message = "Now type something and i shall repeat what you type \n";
+    write(sock , message , strlen(message));
+     
+    //Receive a message from client
+    while( (read_size = recv(sock , client_message , 2000 , 0)) > 0 )
+    {
+        //end of string marker
+		client_message[read_size] = '\0';
+		
+        //verificamos si es exit
+        if(strcmp(client_message, "exit") == 0){
+            printf("Cliente desconectado\n");
+            break;
+        }
+        //mostramos el mensaje del cliente junto con Ip y puerto
+        printf("Cliente: %s\n", client_message);
+        //Send the message back to client
+        write(sock , client_message , strlen(client_message));
+
+
+
+
+		//clear the message buffer
+		memset(client_message, 0, 2000);
+
+    }
+     
+    if(read_size == 0)
+    {
+        puts("Client disconnected");
+        fflush(stdout);
+    }
+    else if(read_size == -1)
+    {
+        perror("recv failed");
+    }
+    // Client closed socket so clean up
+    close(sock);
+    return 0;
+} 
