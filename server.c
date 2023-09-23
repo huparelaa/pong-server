@@ -6,9 +6,9 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-int main(int argc, char **argv){
+int main(int argc, char **argv) {
 
-  if (argc != 2){
+  if (argc != 2) {
     printf("Usage: %s <port>\n", argv[0]);
     exit(0);
   }
@@ -23,7 +23,7 @@ int main(int argc, char **argv){
   int n;
 
   sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-  if (sockfd < 0){
+  if (sockfd < 0) {
     perror("[-]socket error");
     exit(1);
   }
@@ -39,15 +39,17 @@ int main(int argc, char **argv){
     exit(1);
   }
 
-  bzero(buffer, 1024);
-  addr_size = sizeof(client_addr);
-  recvfrom(sockfd, buffer, 1024, 0, (struct sockaddr*)&client_addr, &addr_size);
-  printf("[+]Data recv: %s\n", buffer);
+  while (1) {
+    bzero(buffer, 1024);
+    addr_size = sizeof(client_addr);
+    recvfrom(sockfd, buffer, 1024, 0, (struct sockaddr*)&client_addr, &addr_size);
+    printf("[+]Data recv: %s\n", buffer);
 
-  bzero(buffer, 1024);
-  strcpy(buffer, "Welcome to the UDP Server.");
-  sendto(sockfd, buffer, 1024, 0, (struct sockaddr*)&client_addr, sizeof(client_addr));
-  printf("[+]Data send: %s\n", buffer);
+    bzero(buffer, 1024);
+    strcpy(buffer, "Welcome to the UDP Server.");
+    sendto(sockfd, buffer, 1024, 0, (struct sockaddr*)&client_addr, sizeof(client_addr));
+    printf("[+]Data send: %s\n", buffer);
+  }
 
   return 0;
 }

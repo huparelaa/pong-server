@@ -5,8 +5,9 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <ncurses.h> //Para leer teclas sin esperar Enter
 
-int main(int argc, char **argv){
+int main(int argc, char **argv) {
 
   if (argc != 2) {
     printf("Usage: %s <port>\n", argv[0]);
@@ -19,7 +20,6 @@ int main(int argc, char **argv){
   int sockfd;
   struct sockaddr_in addr;
   char buffer[1024];
-  socklen_t addr_size;
 
   sockfd = socket(AF_INET, SOCK_DGRAM, 0);
   memset(&addr, '\0', sizeof(addr));
@@ -27,15 +27,34 @@ int main(int argc, char **argv){
   addr.sin_port = htons(port);
   addr.sin_addr.s_addr = inet_addr(ip);
 
-  bzero(buffer, 1024);
-  strcpy(buffer, "Hello, World!");
-  sendto(sockfd, buffer, 1024, 0, (struct sockaddr*)&addr, sizeof(addr));
-  printf("[+]Data send: %s\n", buffer);
+  // Inicializar ncurses
+  initscr();
+  cbreak();
+  noecho();
+  keypad(stdscr, TRUE);
 
-  bzero(buffer, 1024);
-  addr_size = sizeof(addr);
-  recvfrom(sockfd, buffer, 1024, 0, (struct sockaddr*)&addr, &addr_size);
-  printf("[+]Data recv: %s\n", buffer);
+  while (1) {
+    int ch = getch(); // Capturar una tecla sin esperar Enter
+
+    if (ch == 'W' || ch == 'w') {
+      strcpy(buffer, "UP");
+    } else if (ch == 'S' || ch == 's') {
+      strcpy(buffer, "DOWN");
+    } else {
+      continue; // Ignorar cualquier otra tecla
+    }
+
+    sendto(sockfd, buffer, strlen(buffer), 0, (struct sockaddr*)&addr, sizeof(addr));
+    printf("[+]Data send: %s\n", buffer);
+
+    bzero(buffer, 1024);
+    socklen_t addr_size = sizeof(addr);
+    recvfrom(sockfd, buffer, 1024, 0, (struct sockaddr*)&addr, &addr_size);
+    printf("[+]Data recv: %s\n", buffer);
+  }
+
+  // Finalizar ncurses
+  endwin();
 
   return 0;
 }
