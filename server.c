@@ -13,7 +13,7 @@ int main(int argc, char **argv) {
     exit(0);
   }
 
-  char *ip = "127.0.0.1";
+  char *ip = "34.42.94.217";
   int port = atoi(argv[1]);
 
   int sockfd;
