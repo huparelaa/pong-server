@@ -5,6 +5,8 @@
 #include "status_checkers.h"
 #include "init.h"
 #include "protocole.h"
+#include "globals.h"
+
 #include "string.h"
 #include <netinet/in.h> //para la estructura de la direccion
 #include <arpa/inet.h>
@@ -17,17 +19,12 @@
 static ball_t ball;
 static paddle_t paddle[2];
 int score[] = {0, 0};
-int MAX_SCORE = 5;
 
 int main(int argc, char *argv[])
 {
-    if (argc != 2)
-    {
-        printf("Usage: %s <port>\n", argv[0]);
-        exit(0);
-    }
-    char *ip = "127.0.0.1";
-    int port = atoi(argv[1]);
+    
+    char *ip = IP;
+    int port = PORT;
 
     int sockfd;
     struct sockaddr_in server_addr, client_addr;
