@@ -11,8 +11,8 @@
 #include <unistd.h>
 #include <sys/socket.h>
 
-#define WIDTH 800
-#define HEIGHT 600
+#define WIDTH 640
+#define HEIGHT 480
 
 static ball_t ball;
 static paddle_t paddle[2];
