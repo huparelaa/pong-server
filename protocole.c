@@ -1,46 +1,105 @@
+#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <netinet/in.h> //para la estructura de la direccion
-#include <string.h>
-#include "game_status.h"
-//devuelve el estado del juego
-void send_game_status(ball_t *ball, paddle_t paddle[2], int score[2], int status, int r, int sockfd, struct sockaddr_in client_addr, socklen_t addr_size)
+#include <unistd.h>
+#include <arpa/inet.h>
+#include "protocole.h"
+#include "globals.h"
+#include "room.h"
+#include "client.h"
+
+int sockfd;
+int address_size = sizeof(struct sockaddr_in);
+struct sockaddr_in server_addr;
+struct sockaddr_in sender_addr;
+char responseBuffer[BUF_SIZE + USERNAME_LEN];
+
+
+void start_server()
 {
-    game_status game;
-    game.ball = *ball;
-    game.paddles[0] = paddle[0];
-    game.paddles[1] = paddle[1];
-    game.score[0] = score[0];
-    game.score[1] = score[1];
-    game.status = status;
-    game.r = r;
-    printf("Sending game status\n");
-    sendto(sockfd, &game, sizeof(game), 0, (struct sockaddr *)&client_addr, sizeof(client_addr));
+    // SOCK_DGRAM are datagram or connectionless sockets they use UDP and will not nessecarily arrive in order or arrive at all
+    sockfd = socket(AF_INET, SOCK_DGRAM, 0); // returns socket file descriptor that can use send() and recv() for data transmission
+    // last argumant protocol number given 0 will derive to protocol based on the 2nd argument type passed
+
+    if (sockfd == SYSERR)
+    { // socket() returns -1 on error
+        close(sockfd);
+        fprintf(stderr, "Failed to get socket file descriptor\n");
+        exit(EXIT_FAILURE);
+    }
+
+    server_addr.sin_family = AF_INET;                // address family we should use for this assignment
+    server_addr.sin_port = htons(PORT);              // flips port argument to big endian and assigns to our port
+    server_addr.sin_addr.s_addr = htonl(INADDR_ANY); // binds socket to all the computers interfaces
+    // INADDR_ANY is defined as 0 but is flipped to network long for consistency
+
+    memset(&(server_addr.sin_zero), '\0', 8); // sets rest of sockaddr_in to 0's 8 bytes worth
+
+    if (bind(sockfd, (struct sockaddr *)&server_addr, sizeof(struct sockaddr)) == SYSERR)
+    {
+        close(sockfd);
+        fprintf(stderr, "Failed to bind on socket!\n");
+        exit(EXIT_FAILURE);
+    }
 }
-// Función para recibir el input del cliente y mover la paleta si es necesario
-void rcv_input(int sockfd, struct sockaddr_in client_addr, socklen_t addr_size, char buffer[1024], paddle_t paddle[2], int HEIGHT, int *state)
+
+int listen_for_packets(char *request_buffer)
 {
-    recvfrom(sockfd, buffer, 1024, 0, (struct sockaddr *)&client_addr, &addr_size);
-    printf("Received: %s\n", buffer);
-    if (strcmp(buffer, "UP1") == 0)
+    printf("Listening for packets...\n");
+    return recvfrom(sockfd, request_buffer, BUF_SIZE - 1, 0, (struct sockaddr *)&sender_addr, (unsigned int *)&address_size);
+    
+}
+
+// function to manage inputs
+void input_handler(char *requestBuffer)
+{
+    bzero(responseBuffer, BUF_SIZE + USERNAME_LEN);
+    char sender_name[USERNAME_LEN];
+
+    if (isConnected(sender_addr, sender_name))
     {
-        move_paddle(&paddle[0], HEIGHT, 1);
+        userColor(sender_addr.sin_port, responseBuffer);
+        strcat(responseBuffer, sender_name);
+        if (strcmp(CLOSE, requestBuffer) == 0)
+        {
+            if (disconnectClient(sender_addr) == OK)
+            { // upon success of disconnect broadcast message to clients that user left
+
+                strcat(responseBuffer, RED " disconnected" RESET "\n");
+
+                broadcast(sender_addr, TRUE, sockfd, responseBuffer); // when sender is NULL it will broadcast to everyone in the client list
+            }
+        }
+        else if (strcmp(EXIT, requestBuffer) == 0)
+        {
+            strcat(responseBuffer, RED " shutdown the server" RESET "\n");
+            broadcast(sender_addr, TRUE, sockfd, responseBuffer);
+            printf("Exiting Server\n");
+            close(sockfd);
+            exit(OK);
+        }
+        else
+        {
+            strcat(responseBuffer, RESET);
+            strcat(responseBuffer, USERNAMExMESSAGE); // inserts string between username and message to look nice
+            strcat(responseBuffer, requestBuffer);
+
+            printf("Message:\n[%s]\n", responseBuffer);
+            // go through entire linked list and echo back the message to all clients connected with proper username of the sender
+            broadcast(sender_addr, FALSE, sockfd, responseBuffer); // sends message to all except sender
+        }
     }
-    else if (strcmp(buffer, "DOWN1") == 0)
+    else
     {
-        move_paddle(&paddle[0], HEIGHT, 0);
+        if (connectClient(sender_addr, requestBuffer,sockfd, responseBuffer) == OK)
+        {
+            userColor(sender_addr.sin_port, responseBuffer);
+            strcat(responseBuffer, requestBuffer);
+            strcat(responseBuffer, GREEN " connected" RESET "\n");
+            broadcast(sender_addr, TRUE, sockfd, responseBuffer);
+            sendClientList(sender_addr, sockfd, responseBuffer);
+        }
+        print_clients_in_room(MAX_ROOMS);
     }
-    else if (strcmp(buffer, "UP2") == 0)
-    {
-        move_paddle(&paddle[1], HEIGHT, 1);
-    }
-    else if (strcmp(buffer, "DOWN2") == 0)
-    {
-        move_paddle(&paddle[1], HEIGHT, 0);
-    }
-    else if(strcmp(buffer, "START") == 0){
-        *state = 1;
-    }
+    bzero(responseBuffer, BUF_SIZE + USERNAME_LEN);
 }
