@@ -3,3 +3,6 @@
 Available commands:
 * **/show** -> Shows a list of clients in the general room.
 * **/room [room id]** -> Join to the room with the id you just typed.
+
+Related repository:
+* [Client](https://github.com/huparelaa/pong-client)
