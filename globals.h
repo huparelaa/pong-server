@@ -26,7 +26,7 @@
 #define SHOW_CLIENTS "/show\n"
 
 // Colors
-#define NCOLORS 12
+#define NCOLORS 10
 #define RED   "\x1B[31m"
 #define GREEN   "\x1B[32m"
 #define YELLOW   "\x1B[33m"

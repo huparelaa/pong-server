@@ -9,7 +9,6 @@
 
 int nbytes;
 char request_buffer[BUF_SIZE];
-
 char sender_name[USERNAME_LEN];
 
 

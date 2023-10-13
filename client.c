@@ -3,7 +3,7 @@
 #include "client.h"
 #include "globals.h"
 
-char *colors[NCOLORS] = {RED, GREEN, YELLOW, BLUE, MAGENTA,
+char *colors[NCOLORS] = {YELLOW, BLUE, MAGENTA,
                          CYAN, LRED, LGREEN, LYELLOW, LBLUE, LMAGENTA,
                          LCYAN};
 

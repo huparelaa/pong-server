@@ -13,6 +13,7 @@ int address_size = sizeof(struct sockaddr_in);
 struct sockaddr_in server_addr;
 struct sockaddr_in sender_addr;
 char responseBuffer[BUF_SIZE + USERNAME_LEN];
+extern Room rooms[MAX_ROOMS];
 
 void start_server()
 {
@@ -47,11 +48,20 @@ int listen_for_packets(char *request_buffer)
     return recvfrom(sockfd, request_buffer, BUF_SIZE - 1, 0, (struct sockaddr *)&sender_addr, (unsigned int *)&address_size);
 }
 
+
+void start_game(){
+    
+}
+
 // function to manage inputs
 void input_handler(char *requestBuffer)
 {
     bzero(responseBuffer, BUF_SIZE + USERNAME_LEN);
     char sender_name[USERNAME_LEN];
+    //consigo el numero de la sala del cliente  que envio el mensaje    
+    int room_id = get_room_of_client(sender_addr);
+    //consigo el numero de clientes conectado en la sala del cliente que envio el mensaje  
+    int player_count = rooms[room_id].player_count;
 
     if (isConnected(sender_addr, sender_name))
     {
@@ -77,12 +87,24 @@ void input_handler(char *requestBuffer)
         }
         else if (strncmp(requestBuffer, "/room", 5) == 0) // Los primeros 5 caracteres de requestBuffer son "/room"
         {
-
             join_room(sender_addr, requestBuffer, sockfd, responseBuffer);
         }
         else if (strcmp(SHOW_CLIENTS, requestBuffer) == 0)
         {
             sendClientList(sender_addr, sockfd, responseBuffer, MAX_ROOMS);
+        }
+        else if(strncmp(requestBuffer,"/start", 6) == 0 &&  (room_id == 10 || player_count != 2))
+        {
+            strcat(responseBuffer, RED " You can't start the game" RESET "\n");
+            sendto(sockfd, responseBuffer, strlen(responseBuffer), 0, (struct sockaddr *)&sender_addr,
+            sizeof(struct sockaddr));
+        }
+        else if(strncmp(requestBuffer,"/start", 6) == 0 && room_id != 10 && player_count == 2)
+        {
+            strcat(responseBuffer, GREEN "You are the player one" RESET "\n");
+            broadcast(sender_addr, FALSE, sockfd, GREEN "You are the player two\n");
+            sendto(sockfd, responseBuffer, strlen(responseBuffer), 0, (struct sockaddr *)&sender_addr,
+            sizeof(struct sockaddr));
         }
         else
         {
