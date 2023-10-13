@@ -11,13 +11,16 @@ typedef struct {
 } Room;
 
 void broadcast(struct sockaddr_in sender, int global, int sockfd, char *responseBuffer);
-int connectClient(struct sockaddr_in newClient, char *username, int sockfd, char responseBuffer[BUF_SIZE+USERNAME_LEN]);
+int connectClient(struct sockaddr_in newClient, char *username, int sockfd, char responseBuffer[BUF_SIZE+USERNAME_LEN], int room_id);
 int isConnected(struct sockaddr_in newClient, char *sender_name);
-int disconnectClient(struct sockaddr_in oldClient);
-void sendClientList(struct sockaddr_in sender, int sockfd, char *responseBuffer);
+int disconnectClient(struct sockaddr_in oldClient, int room_id);
+void sendClientList(struct sockaddr_in sender, int sockfd, char *responseBuffer, int room_id);
 
 int is_room_full(int room_id);
-void join_room(int room_id, client *c);
-void print_clients_in_room(int room_id);
-void print_available_rooms();
+int check_valid_room(int room_id);
+void join_room(struct sockaddr_in client, char *requestBuffer, int sockfd, char responseBuffer[BUF_SIZE + USERNAME_LEN]);
+int get_room_of_client(struct sockaddr_in client_for_search);
+char *get_room_name(int room_id);
+char* getClientName(struct sockaddr_in client_address);
+
 #endif // ROOM_H

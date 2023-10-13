@@ -9,7 +9,7 @@ typedef struct client
     struct sockaddr_in address;  // will hold the client's address information
     char username[USERNAME_LEN]; // will hold the clients username and will be initialized when each client starts and sends it's username and a special code informative of joining server
     struct client *next;
-    int socket_fd;
+    int room_id;
 } client;
 
 int clientCompare(struct sockaddr_in client1, struct sockaddr_in client2);

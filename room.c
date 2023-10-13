@@ -3,20 +3,19 @@
 #include <string.h>
 #include <unistd.h>
 
-
 #include "room.h"
 #include "globals.h"
 
 #include "client.h"
 
 Room rooms[MAX_ROOMS];
-client clientList[MAX_CLIENTS + 1];
+client clientList[MAX_ROOMS + 1];
 
-int connectClient(struct sockaddr_in newClient, char *username, int sockfd, char responseBuffer[BUF_SIZE + USERNAME_LEN])
+int connectClient(struct sockaddr_in newClient, char *username, int sockfd, char responseBuffer[BUF_SIZE + USERNAME_LEN], int room_id)
 {
     printf("Attempting to connect client: %s\n", username);
     // clientList[last_position] will be the general and initial room
-    client *element = &clientList[MAX_CLIENTS];
+    client *element = &clientList[room_id];
 
     while (element != NULL)
     {
@@ -37,7 +36,7 @@ int connectClient(struct sockaddr_in newClient, char *username, int sockfd, char
         element = element->next;
     }
 
-    element = &clientList[MAX_CLIENTS];
+    element = &clientList[room_id];
     while (element->next != NULL)
     {
         element = element->next;
@@ -47,16 +46,18 @@ int connectClient(struct sockaddr_in newClient, char *username, int sockfd, char
 
     element->address = newClient;
     strncpy(element->username, username, USERNAME_LEN);
+    element->room_id = room_id;
     element->next = NULL;
+    rooms[room_id].player_count++;
     printf("Client connected\n");
     return OK;
 }
 
-int disconnectClient(struct sockaddr_in oldClient)
+int disconnectClient(struct sockaddr_in oldClient, int room_id)
 {
     printf("Attempting to disconnect client\n");
     client *temp;
-    client *element = &clientList[MAX_CLIENTS];
+    client *element = &clientList[room_id];
 
     while (element->next != NULL)
     {
@@ -77,17 +78,20 @@ int disconnectClient(struct sockaddr_in oldClient)
 
 int isConnected(struct sockaddr_in newClient, char *sender_name)
 {
-    client *element = &clientList[MAX_CLIENTS];
-
-    while (element != NULL)
+    for (int i = 0; i <= MAX_ROOMS; i++)
     {
-        if (clientCompare(element->address, newClient))
+        client *element = &clientList[i];
+
+        while (element != NULL)
         {
-            strncpy(sender_name, element->username, USERNAME_LEN);
-            printf("Client is already connected\n");
-            return TRUE;
+            if (clientCompare(element->address, newClient))
+            {
+                strncpy(sender_name, element->username, USERNAME_LEN);
+                printf("Client is already connected\n");
+                return TRUE;
+            }
+            element = element->next;
         }
-        element = element->next;
     }
     printf("Client is not already connected\n");
     return FALSE;
@@ -97,7 +101,9 @@ int isConnected(struct sockaddr_in newClient, char *sender_name)
 /* will send to all clients if second argument `global` is set to TRUE */
 void broadcast(struct sockaddr_in sender, int global, int sockfd, char *responseBuffer)
 {
-    client *cli = clientList[MAX_CLIENTS].next; // client list iterator
+    int room_id = get_room_of_client(sender);
+    printf("Broadcasting message to room %d\n", room_id);
+    client *cli = clientList[room_id].next; // client list iterator
 
     while (cli != NULL)
     {
@@ -106,7 +112,7 @@ void broadcast(struct sockaddr_in sender, int global, int sockfd, char *response
         {
             printf("Sending message to %s\n", cli->username);
             if ((sendto(sockfd, responseBuffer, strlen(responseBuffer), 0,
-                (struct sockaddr *)&cli->address, sizeof(struct sockaddr))) == SYSERR)
+                        (struct sockaddr *)&cli->address, sizeof(struct sockaddr))) == SYSERR)
             {
                 perror("sendto");
                 close(sockfd);
@@ -117,18 +123,21 @@ void broadcast(struct sockaddr_in sender, int global, int sockfd, char *response
     }
 }
 
-void sendClientList(struct sockaddr_in sender, int sockfd, char *responseBuffer) {
-    client *cli = clientList[MAX_CLIENTS].next;
+void sendClientList(struct sockaddr_in sender, int sockfd, char *responseBuffer, int room_id)
+{
+    client *cli = clientList[room_id].next;
 
-    while(cli != NULL) {
-        if(clientCompare(sender, cli->address) == FALSE) {
+    while (cli != NULL)
+    {
+        if (clientCompare(sender, cli->address) == FALSE)
+        {
             strcpy(responseBuffer, "");
             userColor(cli->address.sin_port, responseBuffer);
             strcat(responseBuffer, cli->username);
             strcat(responseBuffer, RESET "\n");
-            if((sendto
-                (sockfd, responseBuffer, strlen(responseBuffer), 0, (struct sockaddr *) &sender,
-                 sizeof(struct sockaddr))) == SYSERR) {
+            if ((sendto(sockfd, responseBuffer, strlen(responseBuffer), 0, (struct sockaddr *)&sender,
+                        sizeof(struct sockaddr))) == SYSERR)
+            {
 
                 perror("sendto");
                 close(sockfd);
@@ -143,40 +152,80 @@ int is_room_full(int room_id)
 {
     if (rooms[room_id].player_count == MAX_CLIENTS)
     {
+        printf("Room is full\n");
         return TRUE;
     }
     return FALSE;
 }
 
-void join_room(int room_id, client *c)
+void join_room(struct sockaddr_in client, char *requestBuffer, int sockfd, char responseBuffer[BUF_SIZE + USERNAME_LEN])
 {
-    if (is_room_full(room_id))
+    int room_id = atoi(requestBuffer + 5); // extrae el número de la sala de requestBuffer
+    if (check_valid_room(room_id) == SYSERR)
     {
-        printf("Room is full\n");
-        print_available_rooms();
-        return;
+        strcat(responseBuffer, RED " invalid room number" RESET "\n");
+        broadcast(client, TRUE, sockfd, responseBuffer);
     }
-    rooms[room_id].players[rooms[room_id].player_count] = *c;
-    rooms[room_id].player_count++;
-}
-
-void print_clients_in_room(int room_id)
-{
-    printf("Clients in room %d:\n", room_id);
-    for (int i = 0; i < rooms[room_id].player_count; i++)
+    else if (is_room_full(room_id))
     {
-        printf("%s\n", rooms[room_id].players[i].username);
+        strcat(responseBuffer, RED " room is full" RESET "\n");
+        broadcast(client, TRUE, sockfd, responseBuffer);
     }
-}
-
-void print_available_rooms()
-{
-    printf("Available rooms:\n");
-    for (int i = 0; i < MAX_ROOMS; i++)
+    else
     {
-        if (rooms[i].player_count < MAX_CLIENTS)
+        printf("Clients in room %d\n", rooms[room_id].player_count);
+        if (connectClient(client, getClientName(client), sockfd, responseBuffer, room_id) == OK)
         {
-            printf("Room %d\n", i);
+            userColor(client.sin_port, responseBuffer);
+            strcat(responseBuffer, requestBuffer);
+            strcat(responseBuffer, GREEN " connected" RESET "\n");
+            broadcast(client, TRUE, sockfd, responseBuffer);
+            sendClientList(client, sockfd, responseBuffer, room_id);
+        }
+        // lo desconectamos de la sala MAX_ROOMS
+        disconnectClient(client, MAX_ROOMS);
+    }
+}
+
+int check_valid_room(int room_id)
+{
+    if (room_id <= 0 || room_id >= MAX_ROOMS)
+    {
+        return SYSERR;
+    }
+    return OK;
+}
+
+int get_room_of_client(struct sockaddr_in client_for_search)
+{
+    for (int i = 0; i <= MAX_ROOMS; i++)
+    {
+        client *element = &clientList[i];
+
+        while (element != NULL)
+        {
+            if (clientCompare(element->address, client_for_search))
+            {
+                return i;
+            }
+            element = element->next;
         }
     }
+    return SYSERR;
+}
+
+// obtenemos el nombre del cliente a partir de su dirección
+char *getClientName(struct sockaddr_in client_address)
+{
+    client *cli = clientList[get_room_of_client(client_address)].next;
+
+    while (cli != NULL)
+    {
+        if (clientCompare(cli->address, client_address))
+        {
+            return cli->username;
+        }
+        cli = cli->next;
+    }
+    return NULL;
 }

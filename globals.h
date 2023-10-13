@@ -22,6 +22,8 @@
 #define CLOSE "close\n"
 #define EXIT "exit\n"
 #define USERNAMExMESSAGE ": "
+#define ROOM "/room"
+#define SHOW_CLIENTS "/show\n"
 
 // Colors
 #define NCOLORS 12

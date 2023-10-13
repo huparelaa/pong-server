@@ -14,7 +14,6 @@ struct sockaddr_in server_addr;
 struct sockaddr_in sender_addr;
 char responseBuffer[BUF_SIZE + USERNAME_LEN];
 
-
 void start_server()
 {
     // SOCK_DGRAM are datagram or connectionless sockets they use UDP and will not nessecarily arrive in order or arrive at all
@@ -45,9 +44,7 @@ void start_server()
 
 int listen_for_packets(char *request_buffer)
 {
-    printf("Listening for packets...\n");
     return recvfrom(sockfd, request_buffer, BUF_SIZE - 1, 0, (struct sockaddr *)&sender_addr, (unsigned int *)&address_size);
-    
 }
 
 // function to manage inputs
@@ -62,7 +59,7 @@ void input_handler(char *requestBuffer)
         strcat(responseBuffer, sender_name);
         if (strcmp(CLOSE, requestBuffer) == 0)
         {
-            if (disconnectClient(sender_addr) == OK)
+            if (disconnectClient(sender_addr, MAX_ROOMS) == OK)
             { // upon success of disconnect broadcast message to clients that user left
 
                 strcat(responseBuffer, RED " disconnected" RESET "\n");
@@ -78,28 +75,36 @@ void input_handler(char *requestBuffer)
             close(sockfd);
             exit(OK);
         }
+        else if (strncmp(requestBuffer, "/room", 5) == 0) // Los primeros 5 caracteres de requestBuffer son "/room"
+        {
+
+            join_room(sender_addr, requestBuffer, sockfd, responseBuffer);
+        }
+        else if (strcmp(SHOW_CLIENTS, requestBuffer) == 0)
+        {
+            sendClientList(sender_addr, sockfd, responseBuffer, MAX_ROOMS);
+        }
         else
         {
             strcat(responseBuffer, RESET);
             strcat(responseBuffer, USERNAMExMESSAGE); // inserts string between username and message to look nice
             strcat(responseBuffer, requestBuffer);
 
-            printf("Message:\n[%s]\n", responseBuffer);
+            printf("Message:[%s]\n", responseBuffer);
             // go through entire linked list and echo back the message to all clients connected with proper username of the sender
             broadcast(sender_addr, FALSE, sockfd, responseBuffer); // sends message to all except sender
         }
     }
     else
     {
-        if (connectClient(sender_addr, requestBuffer,sockfd, responseBuffer) == OK)
+        if (connectClient(sender_addr, requestBuffer, sockfd, responseBuffer, MAX_ROOMS) == OK)
         {
             userColor(sender_addr.sin_port, responseBuffer);
             strcat(responseBuffer, requestBuffer);
             strcat(responseBuffer, GREEN " connected" RESET "\n");
             broadcast(sender_addr, TRUE, sockfd, responseBuffer);
-            sendClientList(sender_addr, sockfd, responseBuffer);
+            sendClientList(sender_addr, sockfd, responseBuffer, MAX_ROOMS);
         }
-        print_clients_in_room(MAX_ROOMS);
     }
     bzero(responseBuffer, BUF_SIZE + USERNAME_LEN);
 }
