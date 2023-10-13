@@ -67,6 +67,7 @@ int disconnectClient(struct sockaddr_in oldClient, int room_id)
             free(element->next);
             element->next = temp;
             printf("Client disconnected\n");
+            rooms[room_id].player_count--;
             return OK;
         }
         element = element->next;
@@ -161,15 +162,18 @@ int is_room_full(int room_id)
 void join_room(struct sockaddr_in client, char *requestBuffer, int sockfd, char responseBuffer[BUF_SIZE + USERNAME_LEN])
 {
     int room_id = atoi(requestBuffer + 5); // extrae el número de la sala de requestBuffer
+    int previus_room_id = get_room_of_client(client);
     if (check_valid_room(room_id) == SYSERR)
     {
         strcat(responseBuffer, RED " invalid room number" RESET "\n");
-        broadcast(client, TRUE, sockfd, responseBuffer);
+        sendto(sockfd, responseBuffer, strlen(responseBuffer), 0, (struct sockaddr *)&client,
+               sizeof(struct sockaddr));
     }
     else if (is_room_full(room_id))
     {
         strcat(responseBuffer, RED " room is full" RESET "\n");
-        broadcast(client, TRUE, sockfd, responseBuffer);
+        sendto(sockfd, responseBuffer, strlen(responseBuffer), 0, (struct sockaddr *)&client,
+               sizeof(struct sockaddr));
     }
     else
     {
@@ -183,7 +187,7 @@ void join_room(struct sockaddr_in client, char *requestBuffer, int sockfd, char 
             sendClientList(client, sockfd, responseBuffer, room_id);
         }
         // lo desconectamos de la sala MAX_ROOMS
-        disconnectClient(client, MAX_ROOMS);
+        disconnectClient(client, previus_room_id);
     }
 }
 
