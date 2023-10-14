@@ -159,35 +159,42 @@ int is_room_full(int room_id)
     return FALSE;
 }
 
-void join_room(struct sockaddr_in client, char *requestBuffer, int sockfd, char responseBuffer[BUF_SIZE + USERNAME_LEN])
+void join_room(struct sockaddr_in newClient, char *requestBuffer, int sockfd, char responseBuffer[BUF_SIZE + USERNAME_LEN])
 {
-    int room_id = atoi(requestBuffer + 5); // extrae el número de la sala de requestBuffer
-    int previus_room_id = get_room_of_client(client);
-    if (check_valid_room(room_id) == SYSERR)
+    int new_room_id = atoi(requestBuffer + 5); // extrae el número de la sala de requestBuffer
+    client *cli = getClient(newClient);
+
+    int previus_room_id = cli->room_id;
+    if (check_valid_room(new_room_id) == SYSERR)
     {
         strcat(responseBuffer, RED " invalid room number" RESET "\n");
-        sendto(sockfd, responseBuffer, strlen(responseBuffer), 0, (struct sockaddr *)&client,
+        sendto(sockfd, responseBuffer, strlen(responseBuffer), 0, (struct sockaddr *)&newClient,
                sizeof(struct sockaddr));
     }
-    else if (is_room_full(room_id))
+    else if (is_room_full(new_room_id))
     {
         strcat(responseBuffer, RED " room is full" RESET "\n");
-        sendto(sockfd, responseBuffer, strlen(responseBuffer), 0, (struct sockaddr *)&client,
+        sendto(sockfd, responseBuffer, strlen(responseBuffer), 0, (struct sockaddr *)&newClient,
                sizeof(struct sockaddr));
     }
     else
     {
-        printf("Clients in room %d\n", rooms[room_id].player_count);
-        if (connectClient(client, getClientName(client), sockfd, responseBuffer, room_id) == OK)
-        {
-            userColor(client.sin_port, responseBuffer);
-            strcat(responseBuffer, requestBuffer);
-            strcat(responseBuffer, GREEN " connected" RESET "\n");
-            broadcast(client, TRUE, sockfd, responseBuffer);
-            sendClientList(client, sockfd, responseBuffer, room_id);
-        }
-        // lo desconectamos de la sala MAX_ROOMS
-        disconnectClient(client, previus_room_id);
+
+        // disconnect client from previous room
+        disconnectClient(newClient, previus_room_id);
+        // broadcast message to clients in previous room
+        strcat(responseBuffer, RED " left the room" RESET "\n");
+        broadcast_room(previus_room_id, responseBuffer, sockfd);
+
+        // connect client to new room
+        connectClient(newClient, cli->username, sockfd, responseBuffer, new_room_id);
+        // broadcast message to clients in new room
+        strcpy(responseBuffer, "");
+        userColor(cli->address.sin_port, responseBuffer);
+        strcat(responseBuffer, cli->username);
+        strcat(responseBuffer, RESET);
+        strcat(responseBuffer, GREEN " joined to the room" RESET "\n");
+        broadcast(newClient, FALSE, sockfd, responseBuffer);
     }
 }
 
@@ -198,6 +205,21 @@ int check_valid_room(int room_id)
         return SYSERR;
     }
     return OK;
+}
+
+client *getClient(struct sockaddr_in client_address)
+{
+    client *cli = clientList[get_room_of_client(client_address)].next;
+
+    while (cli != NULL)
+    {
+        if (clientCompare(cli->address, client_address))
+        {
+            return cli;
+        }
+        cli = cli->next;
+    }
+    return NULL;
 }
 
 int get_room_of_client(struct sockaddr_in client_for_search)
@@ -218,18 +240,18 @@ int get_room_of_client(struct sockaddr_in client_for_search)
     return SYSERR;
 }
 
-// obtenemos el nombre del cliente a partir de su dirección
-char *getClientName(struct sockaddr_in client_address)
+void broadcast_room(int room_id, char *responseBuffer, int sockfd)
 {
-    client *cli = clientList[get_room_of_client(client_address)].next;
-
+    client *cli = clientList[room_id].next;
     while (cli != NULL)
     {
-        if (clientCompare(cli->address, client_address))
+        if ((sendto(sockfd, responseBuffer, strlen(responseBuffer), 0, (struct sockaddr *)&cli->address,
+                    sizeof(struct sockaddr))) == SYSERR)
         {
-            return cli->username;
+            perror("sendto");
+            close(sockfd);
+            exit(EXIT_FAILURE);
         }
         cli = cli->next;
     }
-    return NULL;
 }

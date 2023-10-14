@@ -20,7 +20,6 @@ int is_room_full(int room_id);
 int check_valid_room(int room_id);
 void join_room(struct sockaddr_in client, char *requestBuffer, int sockfd, char responseBuffer[BUF_SIZE + USERNAME_LEN]);
 int get_room_of_client(struct sockaddr_in client_for_search);
-char *get_room_name(int room_id);
-char* getClientName(struct sockaddr_in client_address);
-
+client *getClient(struct sockaddr_in client_address);
+void broadcast_room(int room_id, char *responseBuffer, int sockfd);
 #endif // ROOM_H
