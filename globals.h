@@ -26,6 +26,7 @@
 #define CLOSE "/close\n"
 #define ROOM "/room"
 #define SHOW_CLIENTS "/show\n"
+#define START "/start\n"
 
 // Colors
 #define NCOLORS 10

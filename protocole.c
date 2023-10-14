@@ -48,10 +48,6 @@ int listen_for_packets(char *request_buffer)
     return recvfrom(sockfd, request_buffer, BUF_SIZE - 1, 0, (struct sockaddr *)&sender_addr, (unsigned int *)&address_size);
 }
 
-void start_game()
-{
-}
-
 // function to manage inputs
 void input_handler(char *requestBuffer)
 {
@@ -93,18 +89,9 @@ void input_handler(char *requestBuffer)
         {
             sendClientList(sender_addr, sockfd, responseBuffer, MAX_ROOMS);
         }
-        else if (strncmp(requestBuffer, "/start", 6) == 0 && (room_id == 10 || player_count != 2))
+        else if (strcmp(requestBuffer, START) == 0)
         {
-            strcat(responseBuffer, RED " You can't start the game" RESET "\n");
-            sendto(sockfd, responseBuffer, strlen(responseBuffer), 0, (struct sockaddr *)&sender_addr,
-                   sizeof(struct sockaddr));
-        }
-        else if (strncmp(requestBuffer, "/start", 6) == 0 && room_id != 10 && player_count == 2)
-        {
-            strcat(responseBuffer, GREEN "You are the player one" RESET "\n");
-            broadcast(sender_addr, FALSE, sockfd, GREEN "You are the player two\n");
-            sendto(sockfd, responseBuffer, strlen(responseBuffer), 0, (struct sockaddr *)&sender_addr,
-                   sizeof(struct sockaddr));
+            start_game(sockfd, sender_addr, responseBuffer);
         }
         else
         {

@@ -22,4 +22,8 @@ void join_room(struct sockaddr_in client, char *requestBuffer, int sockfd, char 
 int get_room_of_client(struct sockaddr_in client_for_search);
 client *getClient(struct sockaddr_in client_address);
 void broadcast_room(int room_id, char *responseBuffer, int sockfd);
+
+//game
+void start_game(int sockfd, struct sockaddr_in client_address, char *responseBuffer);
+
 #endif // ROOM_H

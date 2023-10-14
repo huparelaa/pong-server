@@ -243,6 +243,7 @@ int get_room_of_client(struct sockaddr_in client_for_search)
 void broadcast_room(int room_id, char *responseBuffer, int sockfd)
 {
     client *cli = clientList[room_id].next;
+
     while (cli != NULL)
     {
         if ((sendto(sockfd, responseBuffer, strlen(responseBuffer), 0, (struct sockaddr *)&cli->address,
@@ -253,5 +254,31 @@ void broadcast_room(int room_id, char *responseBuffer, int sockfd)
             exit(EXIT_FAILURE);
         }
         cli = cli->next;
+    }
+}
+
+void start_game(int sockfd, struct sockaddr_in client_address, char *responseBuffer)
+{
+    int room_id = get_room_of_client(client_address);
+    if(room_id == MAX_ROOMS){
+        // cannot start game in general room
+        strcpy(responseBuffer, "");
+        strcat(responseBuffer, RED " cannot start game in general room" RESET "\n");
+        sendto(sockfd, responseBuffer, strlen(responseBuffer), 0, (struct sockaddr *)&client_address,
+               sizeof(struct sockaddr));
+               
+    }
+    if (rooms[room_id].player_count == 2)
+    {
+        strcpy(responseBuffer, "");
+        strcat(responseBuffer, GREEN " game started" RESET "\n");
+        broadcast_room(room_id, responseBuffer, sockfd);
+    }
+    else
+    {
+        strcpy(responseBuffer, "");
+        strcat(responseBuffer, RED " not enough players" RESET "\n");
+        sendto(sockfd, responseBuffer, strlen(responseBuffer), 0, (struct sockaddr *)&client_address,
+               sizeof(struct sockaddr));
     }
 }
