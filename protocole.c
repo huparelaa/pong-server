@@ -48,9 +48,8 @@ int listen_for_packets(char *request_buffer)
     return recvfrom(sockfd, request_buffer, BUF_SIZE - 1, 0, (struct sockaddr *)&sender_addr, (unsigned int *)&address_size);
 }
 
-
-void start_game(){
-    
+void start_game()
+{
 }
 
 // function to manage inputs
@@ -58,9 +57,9 @@ void input_handler(char *requestBuffer)
 {
     bzero(responseBuffer, BUF_SIZE + USERNAME_LEN);
     char sender_name[USERNAME_LEN];
-    //consigo el numero de la sala del cliente  que envio el mensaje    
+    // consigo el numero de la sala del cliente  que envio el mensaje
     int room_id = get_room_of_client(sender_addr);
-    //consigo el numero de clientes conectado en la sala del cliente que envio el mensaje  
+    // consigo el numero de clientes conectado en la sala del cliente que envio el mensaje
     int player_count = rooms[room_id].player_count;
 
     if (isConnected(sender_addr, sender_name))
@@ -69,12 +68,13 @@ void input_handler(char *requestBuffer)
         strcat(responseBuffer, sender_name);
         if (strcmp(CLOSE, requestBuffer) == 0)
         {
-            if (disconnectClient(sender_addr, MAX_ROOMS) == OK)
+            int previous_room_id = get_room_of_client(sender_addr);
+            if (disconnectClient(sender_addr, previous_room_id) == OK)
             { // upon success of disconnect broadcast message to clients that user left
 
-                strcat(responseBuffer, RED " disconnected" RESET "\n");
-
-                broadcast(sender_addr, TRUE, sockfd, responseBuffer); // when sender is NULL it will broadcast to everyone in the client list
+                // broadcast message to clients in previous room
+                strcat(responseBuffer, RED " left the server" RESET "\n");
+                broadcast_room(previous_room_id, responseBuffer, sockfd);
             }
         }
         else if (strcmp(EXIT, requestBuffer) == 0)
@@ -93,18 +93,18 @@ void input_handler(char *requestBuffer)
         {
             sendClientList(sender_addr, sockfd, responseBuffer, MAX_ROOMS);
         }
-        else if(strncmp(requestBuffer,"/start", 6) == 0 &&  (room_id == 10 || player_count != 2))
+        else if (strncmp(requestBuffer, "/start", 6) == 0 && (room_id == 10 || player_count != 2))
         {
             strcat(responseBuffer, RED " You can't start the game" RESET "\n");
             sendto(sockfd, responseBuffer, strlen(responseBuffer), 0, (struct sockaddr *)&sender_addr,
-            sizeof(struct sockaddr));
+                   sizeof(struct sockaddr));
         }
-        else if(strncmp(requestBuffer,"/start", 6) == 0 && room_id != 10 && player_count == 2)
+        else if (strncmp(requestBuffer, "/start", 6) == 0 && room_id != 10 && player_count == 2)
         {
             strcat(responseBuffer, GREEN "You are the player one" RESET "\n");
             broadcast(sender_addr, FALSE, sockfd, GREEN "You are the player two\n");
             sendto(sockfd, responseBuffer, strlen(responseBuffer), 0, (struct sockaddr *)&sender_addr,
-            sizeof(struct sockaddr));
+                   sizeof(struct sockaddr));
         }
         else
         {

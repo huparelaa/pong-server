@@ -164,7 +164,7 @@ void join_room(struct sockaddr_in newClient, char *requestBuffer, int sockfd, ch
     int new_room_id = atoi(requestBuffer + 5); // extrae el número de la sala de requestBuffer
     client *cli = getClient(newClient);
 
-    int previus_room_id = cli->room_id;
+    int previous_room_id = cli->room_id;
     if (check_valid_room(new_room_id) == SYSERR)
     {
         strcat(responseBuffer, RED " invalid room number" RESET "\n");
@@ -181,10 +181,10 @@ void join_room(struct sockaddr_in newClient, char *requestBuffer, int sockfd, ch
     {
 
         // disconnect client from previous room
-        disconnectClient(newClient, previus_room_id);
+        disconnectClient(newClient, previous_room_id);
         // broadcast message to clients in previous room
         strcat(responseBuffer, RED " left the room" RESET "\n");
-        broadcast_room(previus_room_id, responseBuffer, sockfd);
+        broadcast_room(previous_room_id, responseBuffer, sockfd);
 
         // connect client to new room
         connectClient(newClient, cli->username, sockfd, responseBuffer, new_room_id);
