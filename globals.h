@@ -44,3 +44,7 @@
 #define LCYAN "\x1B[96m"
 #define WHITE "\x1B[37m"
 #define RESET "\x1B[0m"
+
+// PONG VARIABLES
+#define SCREEN_WIDTH 640  // window height
+#define SCREEN_HEIGHT 480 // window width

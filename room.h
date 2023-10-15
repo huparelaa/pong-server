@@ -2,11 +2,16 @@
 #define ROOM_H
 #include "client.h"
 #include "globals.h"
-
+#include "pong_logic/ball.h"
+#include "pong_logic/paddle.h"
 typedef struct {
     int room_id;
     int player_count;
     int status;
+    ball_t ball;
+    paddle_t paddle[2];
+    //score
+    int score[2];
     client players[MAX_CLIENTS];
 } Room;
 

@@ -5,7 +5,7 @@
 
 #include "room.h"
 #include "globals.h"
-
+#include "game_manage.h"
 #include "client.h"
 
 Room rooms[MAX_ROOMS];
@@ -49,6 +49,7 @@ int connectClient(struct sockaddr_in newClient, char *username, int sockfd, char
     element->room_id = room_id;
     element->next = NULL;
     rooms[room_id].player_count++;
+    element->player_number = rooms[room_id].player_count;
     printf("Client connected\n");
     return OK;
 }
@@ -274,6 +275,7 @@ void start_game(int sockfd, struct sockaddr_in client_address, char *responseBuf
         strcpy(responseBuffer, "game started\n");
         // strcat(responseBuffer, GREEN " game started" RESET "\n");
         broadcast_room(room_id, responseBuffer, sockfd);
+        start_pong(room_id, sockfd);
     }
     else
     {

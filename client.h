@@ -10,6 +10,7 @@ typedef struct client
     char username[USERNAME_LEN]; // will hold the clients username and will be initialized when each client starts and sends it's username and a special code informative of joining server
     struct client *next;
     int room_id;
+    int player_number;
 } client;
 
 int clientCompare(struct sockaddr_in client1, struct sockaddr_in client2);
