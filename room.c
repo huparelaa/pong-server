@@ -266,12 +266,13 @@ void start_game(int sockfd, struct sockaddr_in client_address, char *responseBuf
         strcat(responseBuffer, RED " cannot start game in general room" RESET "\n");
         sendto(sockfd, responseBuffer, strlen(responseBuffer), 0, (struct sockaddr *)&client_address,
                sizeof(struct sockaddr));
+        return;
                
     }
-    if (rooms[room_id].player_count == 2)
+    if (rooms[room_id].player_count == MAX_CLIENTS)
     {
-        strcpy(responseBuffer, "");
-        strcat(responseBuffer, GREEN " game started" RESET "\n");
+        strcpy(responseBuffer, "game started\n");
+        // strcat(responseBuffer, GREEN " game started" RESET "\n");
         broadcast_room(room_id, responseBuffer, sockfd);
     }
     else

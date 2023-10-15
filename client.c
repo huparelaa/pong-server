@@ -4,8 +4,8 @@
 #include "globals.h"
 
 char *colors[NCOLORS] = {YELLOW, BLUE, MAGENTA,
-                         CYAN, LRED, LGREEN, LYELLOW, LBLUE, LMAGENTA,
-                         LCYAN};
+                         CYAN, LYELLOW, LBLUE, LMAGENTA,
+                         LCYAN, RED, GREEN, LRED, LGREEN};
 
 /* function returns true if the two passes internet address are identical */
 int clientCompare(struct sockaddr_in client1, struct sockaddr_in client2)

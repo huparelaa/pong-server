@@ -2,7 +2,7 @@
 
 // ROOMS
 #define MAX_CLIENTS 2
-#define MAX_ROOMS 10
+#define MAX_ROOMS 100
 #define USERNAME_LEN 32
 #define MAX_MESSAGE_LENGTH 256
 #define BUF_SIZE 1024
@@ -29,7 +29,7 @@
 #define START "/start\n"
 
 // Colors
-#define NCOLORS 10
+#define NCOLORS 12
 #define RED "\x1B[31m"
 #define GREEN "\x1B[32m"
 #define YELLOW "\x1B[33m"
