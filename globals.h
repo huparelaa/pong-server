@@ -48,3 +48,7 @@
 // PONG VARIABLES
 #define SCREEN_WIDTH 640  // window height
 #define SCREEN_HEIGHT 480 // window width
+
+// PONG RECEIVERS
+#define PADDLE1 "PADDLE1:"
+#define PADDLE2 "PADDLE2:"

@@ -13,6 +13,7 @@ typedef struct {
     //score
     int score[2];
     client players[MAX_CLIENTS];
+    int game_started;
 } Room;
 
 void broadcast(struct sockaddr_in sender, int global, int sockfd, char *responseBuffer);

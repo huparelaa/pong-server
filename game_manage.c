@@ -6,6 +6,8 @@
 #include "pong_logic/paddle.h"
 #include "pong_logic/init.h"
 #include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 extern Room rooms[MAX_ROOMS];
 extern client clientList[MAX_ROOMS + 1];
@@ -20,6 +22,7 @@ void start_pong(int new_room_id, int sockfd)
     send_paddle1();
     send_paddle2();
     send_score();
+    send_player_number();
 }
 
 void send_ball()
@@ -29,20 +32,46 @@ void send_ball()
     broadcast_room(room_id, ball, sockfd);
 }
 
-void send_paddle1(){
+void send_paddle1()
+{
     char paddle1[BUF_SIZE];
     sprintf(paddle1, "PADDLE1: %d %d", rooms[room_id].paddle[0].x, rooms[room_id].paddle[0].y);
     broadcast_room(room_id, paddle1, sockfd);
 }
 
-void send_paddle2(){
+void send_paddle2()
+{
     char paddle2[BUF_SIZE];
     sprintf(paddle2, "PADDLE2: %d %d", rooms[room_id].paddle[1].x, rooms[room_id].paddle[1].y);
     broadcast_room(room_id, paddle2, sockfd);
 }
 
-void send_score(){
+void send_score()
+{
     char score[BUF_SIZE];
     sprintf(score, "SCORE: %d %d", rooms[room_id].score[0], rooms[room_id].score[1]);
     broadcast_room(room_id, score, sockfd);
+}
+
+void send_player_number()
+{
+    char player_number[BUF_SIZE];
+
+    // ponemos el valor en 1
+    sprintf(player_number, "PLAYER: %d", 1);
+
+    client *cli = clientList[room_id].next;
+    while (cli != NULL)
+    {
+        if ((sendto(sockfd, player_number, strlen(player_number), 0, (struct sockaddr *)&cli->address,
+                    sizeof(struct sockaddr))) == SYSERR)
+        {
+            perror("sendto");
+            close(sockfd);
+            exit(EXIT_FAILURE);
+        } 
+        // ponemos el valor en 2
+        sprintf(player_number, "PLAYER: %d", 2);
+        cli = cli->next;
+    }
 }
