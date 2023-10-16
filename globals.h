@@ -14,8 +14,9 @@
 #define OK 0
 
 // SERVER
-#define PORT 8888
-#define IP "127.0.0.1"
+#define PORT 3001
+// #define IP "127.0.0.1"
+#define IP "172.31.13.59"
 
 // ACTIONS
 #define ERROR "error\n"
@@ -48,7 +49,11 @@
 // PONG VARIABLES
 #define SCREEN_WIDTH 640  // window height
 #define SCREEN_HEIGHT 480 // window width
+#define MAX_SCORE 2
 
 // PONG RECEIVERS
 #define PADDLE1 "PADDLE1:"
 #define PADDLE2 "PADDLE2:"
+#define BALL "BALL:"
+#define SCORE_SENDER_1 "1SCORED"
+#define SCORE_SENDER_2 "2SCORED"
