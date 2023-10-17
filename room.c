@@ -273,6 +273,16 @@ void broadcast_room(int room_id, char *responseBuffer, int sockfd)
 void start_game(int sockfd, struct sockaddr_in client_address, char *responseBuffer)
 {
     int room_id = get_room_of_client(client_address);
+
+    if (rooms[room_id].game_started == TRUE)
+    {
+        strcpy(responseBuffer, "");
+        strcat(responseBuffer, RED " game already started" RESET "\n");
+        sendto(sockfd, responseBuffer, strlen(responseBuffer), 0, (struct sockaddr *)&client_address,
+               sizeof(struct sockaddr));
+        return;
+    }
+
     if(room_id == MAX_ROOMS){
         // cannot start game in general room
         strcpy(responseBuffer, "");
@@ -285,6 +295,7 @@ void start_game(int sockfd, struct sockaddr_in client_address, char *responseBuf
     if (rooms[room_id].player_count == MAX_CLIENTS)
     {
         strcpy(responseBuffer, "game started\n");
+        rooms[room_id].game_started = TRUE;
         // strcat(responseBuffer, GREEN " game started" RESET "\n");
         broadcast_room(room_id, responseBuffer, sockfd);
         start_pong(room_id, sockfd);

@@ -7,6 +7,7 @@
 #include "globals.h"
 #include "room.h"
 #include "client.h"
+#include "game_manage.h"
 
 int sockfd;
 int address_size = sizeof(struct sockaddr_in);
@@ -56,8 +57,6 @@ void input_handler(char *requestBuffer)
     char sender_name[USERNAME_LEN];
     // consigo el numero de la sala del cliente  que envio el mensaje
     int room_id = get_room_of_client(sender_addr);
-    // consigo el numero de clientes conectado en la sala del cliente que envio el mensaje
-    int player_count = rooms[room_id].player_count;
 
     if (isConnected(sender_addr, sender_name))
     {
@@ -94,6 +93,26 @@ void input_handler(char *requestBuffer)
         else if (strcmp(requestBuffer, START) == 0)
         {
             start_game(sockfd, sender_addr, responseBuffer);
+        }
+        else if (strncmp(requestBuffer, PADDLE1, 7) == 0)
+        {
+            broadcast(sender_addr, FALSE, sockfd, requestBuffer);
+        }
+        else if (strncmp(requestBuffer, PADDLE2, 7) == 0)
+        {
+            broadcast(sender_addr, FALSE, sockfd, requestBuffer);
+        }
+        else if (strncmp(requestBuffer, BALL, 5) == 0)
+        {
+            broadcast(sender_addr, FALSE, sockfd, requestBuffer);
+        }
+        else if (strncmp(requestBuffer, SCORE_SENDER_1, 8) == 0)
+        {
+            update_score(room_id, 1);
+        }
+        else if (strncmp(requestBuffer, SCORE_SENDER_2, 8) == 0)
+        {
+            update_score(room_id, 2);
         }
         else
         {
