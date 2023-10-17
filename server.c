@@ -21,7 +21,9 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    char *historialFileName = argv[1];
+    char *historialFileName = malloc(strlen(argv[1]) + 5);
+    strcpy(historialFileName, argv[1]);
+    strcat(historialFileName, ".txt");
 
     // open file for appending
     historialFile = fopen(historialFileName, "a");
