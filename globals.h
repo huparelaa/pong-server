@@ -15,13 +15,8 @@
 
 // SERVER
 #define PORT 3001
-<<<<<<< HEAD
-#define IP "127.0.0.1"
-//#define IP "172.31.13.59"
-=======
 //#define IP "127.0.0.1"
 #define IP "172.31.13.59"
->>>>>>> 2cc2ccb44332aa1c41bc36775a42b088f965c65f
 
 // ACTIONS
 #define ERROR "error\n"
