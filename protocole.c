@@ -92,28 +92,25 @@ void input_handler(char *requestBuffer)
         {
             start_game(sockfd, sender_addr, responseBuffer);
         }
-        else if (rooms[room_id].game_started == TRUE)  // GAME PARSING
+        else if (strncmp(requestBuffer, PADDLE1, 7) == 0)
         {
-            if (strncmp(requestBuffer, PADDLE1, 7) == 0)
-            {
-                broadcast(sender_addr, FALSE, sockfd, requestBuffer);
-            }
-            else if (strncmp(requestBuffer, PADDLE2, 7) == 0)
-            {
-                broadcast(sender_addr, FALSE, sockfd, requestBuffer);
-            }
-            else if (strncmp(requestBuffer, BALL, 5) == 0)
-            {
-                broadcast(sender_addr, FALSE, sockfd, requestBuffer);
-            }
-            else if (strncmp(requestBuffer, SCORE_SENDER_1, 8) == 0)
-            {
-                update_score(room_id, 1);
-            }
-            else if (strncmp(requestBuffer, SCORE_SENDER_2, 8) == 0)
-            {
-                update_score(room_id, 2);
-            }
+            broadcast(sender_addr, FALSE, sockfd, requestBuffer);
+        }
+        else if (strncmp(requestBuffer, PADDLE2, 7) == 0)
+        {
+            broadcast(sender_addr, FALSE, sockfd, requestBuffer);
+        }
+        else if (strncmp(requestBuffer, BALL, 5) == 0)
+        {
+            broadcast(sender_addr, FALSE, sockfd, requestBuffer);
+        }
+        else if (strncmp(requestBuffer, SCORE_SENDER_1, 8) == 0)
+        {
+            update_score(room_id, 1);
+        }
+        else if (strncmp(requestBuffer, SCORE_SENDER_2, 8) == 0)
+        {
+            update_score(room_id, 2);
         }
         else
         {
