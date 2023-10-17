@@ -8,11 +8,14 @@
 #include "game_manage.h"
 #include "client.h"
 
+extern FILE *historialFile;
+
 Room rooms[MAX_ROOMS];
 client clientList[MAX_ROOMS + 1];
 
 int connectClient(struct sockaddr_in newClient, char *username, int sockfd, char responseBuffer[BUF_SIZE + USERNAME_LEN], int room_id)
 {
+    fprintf(historialFile, "Attempting to connect client: %s\n", username);
     printf("Attempting to connect client: %s\n", username);
     // clientList[last_position] will be the general and initial room
     client *element = &clientList[room_id];
@@ -21,6 +24,7 @@ int connectClient(struct sockaddr_in newClient, char *username, int sockfd, char
     {
         if (strcmp(element->username, username) == 0)
         {
+            fprintf(historialFile, "Cannot connect client user already exists\n");
             printf("Cannot connect client user already exists\n");
             strcpy(responseBuffer, "");
             strcat(responseBuffer, ERROR);
@@ -50,12 +54,14 @@ int connectClient(struct sockaddr_in newClient, char *username, int sockfd, char
     element->next = NULL;
     rooms[room_id].player_count++;
     element->player_number = rooms[room_id].player_count;
+    fprintf(historialFile, "Client connected\n");
     printf("Client connected\n");
     return OK;
 }
 
 int disconnectClient(struct sockaddr_in oldClient, int room_id)
 {
+    fprintf(historialFile, "Attempting to disconnect client\n");
     printf("Attempting to disconnect client\n");
     client *temp;
     client *element = &clientList[room_id];
@@ -67,13 +73,14 @@ int disconnectClient(struct sockaddr_in oldClient, int room_id)
             temp = element->next->next;
             free(element->next);
             element->next = temp;
+            fprintf(historialFile, "Client disconnected\n");
             printf("Client disconnected\n");
             rooms[room_id].player_count--;
             return OK;
         }
         element = element->next;
     }
-
+    fprintf(historialFile, "Client was not disconnected properly\n");
     printf("Client was not disconnected properly\n");
     return SYSERR;
 }
@@ -89,12 +96,14 @@ int isConnected(struct sockaddr_in newClient, char *sender_name)
             if (clientCompare(element->address, newClient))
             {
                 strncpy(sender_name, element->username, USERNAME_LEN);
+                fprintf(historialFile, "Client is already connected\n");
                 printf("Client is already connected\n");
                 return TRUE;
             }
             element = element->next;
         }
     }
+    fprintf(historialFile, "Client is not already connected\n");
     printf("Client is not already connected\n");
     return FALSE;
 }
@@ -104,6 +113,7 @@ int isConnected(struct sockaddr_in newClient, char *sender_name)
 void broadcast(struct sockaddr_in sender, int global, int sockfd, char *responseBuffer)
 {
     int room_id = get_room_of_client(sender);
+    fprintf(historialFile, "Broadcasting message to room %d\n", room_id);
     printf("Broadcasting message to room %d\n", room_id);
     client *cli = clientList[room_id].next; // client list iterator
 
@@ -112,6 +122,7 @@ void broadcast(struct sockaddr_in sender, int global, int sockfd, char *response
         // if sender isn't the client send out the message // may need separate clientCompare function // use username for comparisons so noone can connect with the same username
         if (clientCompare(sender, cli->address) == FALSE || global)
         {
+            fprintf(historialFile, "Sending message to %s\n", cli->username);
             printf("Sending message to %s\n", cli->username);
             if ((sendto(sockfd, responseBuffer, strlen(responseBuffer), 0,
                         (struct sockaddr *)&cli->address, sizeof(struct sockaddr))) == SYSERR)
@@ -154,6 +165,7 @@ int is_room_full(int room_id)
 {
     if (rooms[room_id].player_count == MAX_CLIENTS)
     {
+        fprintf(historialFile, "Room is full\n");
         printf("Room is full\n");
         return TRUE;
     }

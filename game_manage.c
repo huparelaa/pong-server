@@ -11,9 +11,12 @@ extern Room rooms[MAX_ROOMS];
 extern client clientList[MAX_ROOMS + 1];
 extern int sockfd;
 int room_id = 0;
+extern FILE *historialFile;
+
 void start_pong(int new_room_id, int sockfd)
 {
     room_id = new_room_id;
+    fprintf(historialFile, "Starting game in room %d\n", room_id);
     printf("Starting game in room %d\n", room_id);
     init_game(&rooms[room_id].ball, rooms[room_id].paddle, SCREEN_HEIGHT, SCREEN_WIDTH);
     send_ball();

@@ -14,6 +14,7 @@ struct sockaddr_in server_addr;
 struct sockaddr_in sender_addr;
 char responseBuffer[BUF_SIZE + USERNAME_LEN];
 extern Room rooms[MAX_ROOMS];
+extern FILE *historialFile;
 
 void start_server()
 {
@@ -77,6 +78,7 @@ void input_handler(char *requestBuffer)
         {
             strcat(responseBuffer, RED " shutdown the server" RESET "\n");
             broadcast(sender_addr, TRUE, sockfd, responseBuffer);
+            fprintf(historialFile, "Exiting Server\n");
             printf("Exiting Server\n");
             close(sockfd);
             exit(OK);
@@ -98,7 +100,7 @@ void input_handler(char *requestBuffer)
             strcat(responseBuffer, RESET);
             strcat(responseBuffer, USERNAMExMESSAGE); // inserts string between username and message to look nice
             strcat(responseBuffer, requestBuffer);
-
+            fprintf(historialFile, "Message:[%s]\n", responseBuffer);
             printf("Message:[%s]\n", responseBuffer);
             // go through entire linked list and echo back the message to all clients connected with proper username of the sender
             broadcast(sender_addr, FALSE, sockfd, responseBuffer); // sends message to all except sender
