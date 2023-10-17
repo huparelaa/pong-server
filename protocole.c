@@ -82,7 +82,7 @@ void input_handler(char *requestBuffer)
             close(sockfd);
             exit(OK);
         }
-        else if (strncmp(requestBuffer, "/room", 5) == 0) // Los primeros 5 caracteres de requestBuffer son "/room"
+        else if (strncmp(requestBuffer, ROOM_COMMAND, 5) == 0) // Los primeros 5 caracteres de requestBuffer son "/room"
         {
             join_room(sender_addr, requestBuffer, sockfd, responseBuffer);
         }

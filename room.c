@@ -194,11 +194,15 @@ void join_room(struct sockaddr_in newClient, char *requestBuffer, int sockfd, ch
     }
     else
     {
-        strcat(responseBuffer, GREEN " you are already in room ");
+        strcat(responseBuffer, GREEN " you joined to the room ");
         strcat(responseBuffer,  room_id_str);
         strcat(responseBuffer, RESET "\n");
         sendto(sockfd, responseBuffer, strlen(responseBuffer), 0, (struct sockaddr *)&newClient,
                sizeof(struct sockaddr));
+
+        //clear te response buffer
+        strcpy(responseBuffer, "");
+        
         // disconnect client from previous room
         disconnectClient(newClient, previous_room_id);
         // broadcast message to clients in previous room

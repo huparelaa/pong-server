@@ -25,7 +25,7 @@
 
 // PROTOCOL
 #define CLOSE "/close\n"
-#define ROOM "/room"
+#define ROOM_COMMAND "/room"
 #define SHOW_CLIENTS "/show\n"
 #define START "/start\n"
 
