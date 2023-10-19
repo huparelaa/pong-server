@@ -108,11 +108,11 @@ void input_handler(char *requestBuffer)
         }
         else if (strncmp(requestBuffer, SCORE_SENDER_1, 8) == 0)
         {
-            update_score(room_id, 1);
+            update_score(sockfd, sender_addr);
         }
         else if (strncmp(requestBuffer, SCORE_SENDER_2, 8) == 0)
         {
-            update_score(room_id, 2);
+            update_score(sockfd, sender_addr);
         }
         else
         {
