@@ -64,7 +64,8 @@ void send_score(int room_id, int sockfd)
 
 void update_score(int sockfd, struct sockaddr_in client_addr)
 {
-    int p_number = getClient(client_addr)->player_number;
+    int p_number = !(getClient(client_addr)->player_number-1); // coversion to binary and change to opponent position
+    p_number = p_number + 1; // conversion to decimal
     int room_id = get_room_of_client(client_addr);
     printf("Player %d scored in room %d\n", p_number, room_id);
     rooms[room_id].score[p_number - 1] += 1;
